@@ -19,10 +19,9 @@ fun NavGraphBuilder.stockNavGraph(
 
     composable(
         route = StockRoutes.detailsPattern,
-        arguments = listOf(navArgument(StockRoutes.ARG_SYMBOL) { type = NavType.StringType })
-    ) { backStackEntry ->
-        val symbol = backStackEntry.arguments?.getString(StockRoutes.ARG_SYMBOL).orEmpty()
-
+        arguments = listOf(navArgument(StockRoutes.ARG_SYMBOL) { type = NavType.StringType }),
+        deepLinks = listOf(navDeepLink { uriPattern = "stocks://symbol/{${StockRoutes.ARG_SYMBOL}}" })
+    ) {
         StockDetailsScreen(
             onBack = navigator::back
         )
