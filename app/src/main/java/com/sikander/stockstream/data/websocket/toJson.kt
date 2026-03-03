@@ -6,5 +6,5 @@ import kotlinx.serialization.encodeToString
 internal fun WebSocketPriceMessage.toJson(): String =
     WebSocketJson.encodeToString(this)
 
-internal fun wsPriceMessageFromJson(json: String): WebSocketPriceMessage =
+internal fun websocketPriceMessageFromJson(json: String): WebSocketPriceMessage =
     WebSocketJson.decodeFromString(json)

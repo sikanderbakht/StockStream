@@ -6,5 +6,5 @@ import kotlinx.serialization.Serializable
 data class WebSocketPriceMessage(
     val symbol: String,
     val price: Double,
-    val ts: Long
+    val timestamp: Long
 )

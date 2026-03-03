@@ -1,6 +1,5 @@
 package com.sikander.stockstream.presentation.stocks.details
 
-import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -13,44 +12,44 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawing
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.ArrowBack
-import androidx.compose.material3.AssistChip
-import androidx.compose.material3.AssistChipDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
+import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.sikander.stockstream.presentation.ui.components.AppBackground
 import com.sikander.stockstream.presentation.ui.components.GlassCard
 import com.sikander.stockstream.presentation.ui.theme.priceColors
 import java.util.Locale
-import kotlin.math.abs
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun StockDetailsScreen(
-    symbol: String,
-    onBack: () -> Unit
+    onBack: () -> Unit,
+    detailsViewModel: DetailsViewModel = hiltViewModel()
 ) {
-    val price = 875.12
-    val previous = 862.78
+    val state by detailsViewModel.uiState.collectAsStateWithLifecycle()
+
+    val price = state.price
+    val previous = state.previousPrice
     val change = price - previous
 
-    val isUp = change > 0
-    val isDown = change < 0
+    val isUp = state.isUp
+    val isDown = state.isDown
     val arrow = when {
         isUp -> "↑"
         isDown -> "↓"
@@ -75,10 +74,10 @@ fun StockDetailsScreen(
                     containerColor = Color.Transparent,
                     titleContentColor = MaterialTheme.colorScheme.onSurface
                 ),
-                title = { Text(text = symbol) },
+                title = { Text(text = state.symbol) },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
-                        Icon(Icons.Filled.ArrowBack, contentDescription = "Back")
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
                     }
                 }
             )
@@ -127,7 +126,7 @@ fun StockDetailsScreen(
                                 style = MaterialTheme.typography.bodyLarge
                             )
                             Text(
-                                text = String.format(Locale.US, "%.2f", abs(change)),
+                                text = String.format(Locale.US, "%.2f", kotlin.math.abs(change)),
                                 color = changeColor,
                                 style = MaterialTheme.typography.bodyLarge
                             )
@@ -135,7 +134,7 @@ fun StockDetailsScreen(
                     }
 
                     Text(
-                        text = "Updated just now",
+                        text = if (state.timestamp == 0L) "Waiting for first update..." else "Updated",
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
@@ -148,13 +147,13 @@ fun StockDetailsScreen(
             ) {
                 Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
                     Text(
-                        text = "About $symbol",
+                        text = "About ${state.symbol}",
                         style = MaterialTheme.typography.titleMedium,
                         color = MaterialTheme.colorScheme.onSurface
                     )
                     Text(
-                        text = "This is a placeholder description for $symbol. " +
-                                "Later we’ll show real-time updates using the shared WebSocket stream.",
+                        text = "Real-time price updates are streamed via WebSocket echo. " +
+                                "This screen observes the shared stream (no duplicate connections).",
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )

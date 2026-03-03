@@ -31,37 +31,26 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.saveable.rememberSaveable
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
+import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.sikander.stockstream.presentation.ui.components.AppBackground
 import com.sikander.stockstream.presentation.ui.components.ConnectionChip
 import com.sikander.stockstream.presentation.ui.components.GlassCard
+import com.sikander.stockstream.presentation.ui.components.SkeletonStockRow
 import com.sikander.stockstream.presentation.ui.theme.priceColors
 import java.util.Locale
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun StockFeedScreen(
-    onStockItemClick: (String) -> Unit
+    onStockItemClick: (String) -> Unit,
+    feedViewModel: FeedViewModel = hiltViewModel()
 ) {
-    var isRunning by rememberSaveable { mutableStateOf(false) }
-    var isConnected by rememberSaveable { mutableStateOf(true) }
-    var query by rememberSaveable { mutableStateOf("") }
-
-    val allItems = remember { mockRows() }
-
-    val items = remember(query, allItems) {
-        allItems
-            .filter { it.symbol.contains(query.trim(), ignoreCase = true) }
-            .sortedByDescending { it.price }
-    }
+    val state by feedViewModel.uiState.collectAsStateWithLifecycle()
 
     val bg = AppBackground()
 
@@ -86,7 +75,7 @@ fun StockFeedScreen(
                         )
                     },
                     actions = {
-                        ConnectionChip(isConnected = isConnected)
+                        ConnectionChip(isConnected = state.isConnected)
                         Spacer(Modifier.width(12.dp))
                     }
                 )
@@ -94,7 +83,7 @@ fun StockFeedScreen(
             bottomBar = {
                 BottomAppBar(containerColor = Color.Transparent) {
                     Button(
-                        onClick = { isRunning = !isRunning },
+                        onClick = feedViewModel::toggleFeed,
                         modifier = Modifier
                             .fillMaxWidth()
                             .padding(horizontal = 16.dp, vertical = 10.dp),
@@ -108,7 +97,7 @@ fun StockFeedScreen(
                             MaterialTheme.colorScheme.primary.copy(alpha = 0.35f)
                         )
                     ) {
-                        Text(if (isRunning) "Stop Feed" else "Start Feed")
+                        Text(if (state.isRunning) "Stop Feed" else "Start Feed")
                     }
                 }
             }
@@ -126,8 +115,8 @@ fun StockFeedScreen(
                     contentPadding = PaddingValues(horizontal = 12.dp)
                 ) {
                     OutlinedTextField(
-                        value = query,
-                        onValueChange = { query = it },
+                        value = state.query,
+                        onValueChange = feedViewModel::onQueryChange,
                         placeholder = {
                             Text(
                                 text = "Search stocks...",
@@ -149,19 +138,42 @@ fun StockFeedScreen(
 
                 LazyColumn(
                     modifier = Modifier.fillMaxWidth(),
-                    contentPadding = PaddingValues(bottom = 12.dp + padding.calculateBottomPadding())
+                    contentPadding = PaddingValues(
+                        bottom = 12.dp + padding.calculateBottomPadding()
+                    )
                 ) {
-                    items(
-                        items = items,
-                        key = { it.symbol }
-                    ) { row ->
-                        StockCardRow(
-                            row = row,
-                            onClick = { onStockItemClick(row.symbol) },
-                            modifier = Modifier
-                                .padding(horizontal = 16.dp, vertical = 8.dp)
-                                .animateItem()
-                        )
+
+                    if (state.items.isEmpty()) {
+                        item {
+                            FeedInlineHint(
+                                isRunning = state.isRunning,
+                                query = state.query,
+                                onStartClick = feedViewModel::toggleFeed,
+                                modifier = Modifier
+                                    .padding(horizontal = 16.dp)
+                                    .padding(top = 6.dp, bottom = 10.dp)
+                            )
+                        }
+
+                        items(7) { _ ->
+                            SkeletonStockRow(
+                                modifier = Modifier
+                                    .padding(horizontal = 16.dp, vertical = 8.dp)
+                            )
+                        }
+                    } else {
+                        items(
+                            items = state.items,
+                            key = { it.symbol }
+                        ) { row ->
+                            StockCardRow(
+                                row = row,
+                                onClick = { onStockItemClick(row.symbol) },
+                                modifier = Modifier
+                                    .padding(horizontal = 16.dp, vertical = 8.dp)
+                                    .animateItem()
+                            )
+                        }
                     }
                 }
             }
@@ -208,9 +220,7 @@ private fun StockCardRow(
             modifier = Modifier.fillMaxWidth(),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Column(
-                modifier = Modifier.weight(1f)
-            ) {
+            Column(modifier = Modifier.weight(1f)) {
                 Text(
                     text = row.symbol,
                     style = MaterialTheme.typography.titleMedium,
@@ -257,13 +267,3 @@ private fun StockCardRow(
         }
     }
 }
-
-private fun mockRows(): List<StockRowUi> = listOf(
-    StockRowUi("NVDA", 875.12, 862.78),
-    StockRowUi("AAPL", 192.44, 193.64),
-    StockRowUi("GOOG", 154.33, 153.71),
-    StockRowUi("TSLA", 201.09, 204.50),
-    StockRowUi("AMZN", 176.55, 175.50),
-    StockRowUi("MSFT", 412.10, 408.33),
-    StockRowUi("META", 480.50, 482.72),
-)

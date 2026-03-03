@@ -24,7 +24,6 @@ fun NavGraphBuilder.stockNavGraph(
         val symbol = backStackEntry.arguments?.getString(StockRoutes.ARG_SYMBOL).orEmpty()
 
         StockDetailsScreen(
-            symbol = symbol,
             onBack = navigator::back
         )
     }

@@ -1,12 +1,12 @@
 package com.sikander.stockstream.domain.repository
 
-import com.sikander.stockstream.data.repository.QuoteSnapshot
-import com.sikander.stockstream.data.websocket.WebSocketConnectionState
+import com.sikander.stockstream.domain.model.ConnectionStatus
+import com.sikander.stockstream.domain.model.StockQuote
 import kotlinx.coroutines.flow.StateFlow
 
 interface PriceFeedRepository {
-    val connectionState: StateFlow<WebSocketConnectionState>
-    val quotes: StateFlow<Map<String, QuoteSnapshot>>
+    val connectionStatus: StateFlow<ConnectionStatus>
+    val quotes: StateFlow<Map<String, StockQuote>>
 
     fun start()
     fun stop()
