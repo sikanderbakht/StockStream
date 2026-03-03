@@ -1,5 +1,7 @@
 package com.sikander.stockstream.presentation.stocks.feed
 
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -30,7 +32,11 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -42,6 +48,7 @@ import com.sikander.stockstream.presentation.ui.components.ConnectionChip
 import com.sikander.stockstream.presentation.ui.components.GlassCard
 import com.sikander.stockstream.presentation.ui.components.SkeletonStockRow
 import com.sikander.stockstream.presentation.ui.theme.priceColors
+import kotlinx.coroutines.delay
 import java.util.Locale
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -207,6 +214,28 @@ private fun StockCardRow(
         else -> neutralColor
     }
 
+    val flashBaseColor = when {
+        row.isUp -> upColor
+        row.isDown -> downColor
+        else -> Color.Transparent
+    }
+
+    var flashOn by remember(row.timestamp) { mutableStateOf(false) }
+
+    LaunchedEffect(row.timestamp) {
+        if (flashBaseColor != Color.Transparent) {
+            flashOn = true
+            delay(900)
+            flashOn = false
+        }
+    }
+
+    val flashAlpha by animateFloatAsState(
+        targetValue = if (flashOn) 0.16f else 0f,
+        animationSpec = tween(durationMillis = 350),
+        label = "rowFlashAlpha"
+    )
+
     val titleColor = MaterialTheme.colorScheme.onSurface
     val subColor = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.75f)
 
@@ -214,56 +243,66 @@ private fun StockCardRow(
         modifier = modifier
             .fillMaxWidth()
             .clickable(onClick = onClick),
-        contentPadding = PaddingValues(horizontal = 16.dp, vertical = 12.dp)
+        contentPadding = PaddingValues(0.dp)
     ) {
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            verticalAlignment = Alignment.CenterVertically
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .background(
+                    color = flashBaseColor.copy(alpha = flashAlpha),
+                    shape = RoundedCornerShape(20.dp)
+                )
+                .padding(horizontal = 16.dp, vertical = 12.dp)
         ) {
-            Column(modifier = Modifier.weight(1f)) {
-                Text(
-                    text = row.symbol,
-                    style = MaterialTheme.typography.titleMedium,
-                    color = titleColor,
-                    maxLines = 1
-                )
-                Text(
-                    text = "—",
-                    style = MaterialTheme.typography.labelSmall,
-                    color = subColor,
-                    maxLines = 1
-                )
-            }
-
-            Column(
-                horizontalAlignment = Alignment.End,
-                modifier = Modifier.wrapContentWidth()
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically
             ) {
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(
+                        text = row.symbol,
+                        style = MaterialTheme.typography.titleMedium,
+                        color = titleColor,
+                        maxLines = 1
+                    )
+                    Text(
+                        text = "—",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = subColor,
+                        maxLines = 1
+                    )
+                }
+
+                Column(
+                    horizontalAlignment = Alignment.End,
+                    modifier = Modifier.wrapContentWidth()
+                ) {
+                    Text(
+                        text = "$${String.format(Locale.US, "%.2f", row.price)}",
+                        style = MaterialTheme.typography.titleMedium,
+                        color = titleColor,
+                        maxLines = 1,
+                        softWrap = false
+                    )
+                    Text(
+                        text = changeText,
+                        style = MaterialTheme.typography.labelSmall,
+                        color = changeColor,
+                        maxLines = 1,
+                        softWrap = false
+                    )
+                }
+
+                Spacer(Modifier.width(10.dp))
+
                 Text(
-                    text = "$${String.format(Locale.US, "%.2f", row.price)}",
-                    style = MaterialTheme.typography.titleMedium,
-                    color = titleColor,
-                    maxLines = 1,
-                    softWrap = false
-                )
-                Text(
-                    text = changeText,
-                    style = MaterialTheme.typography.labelSmall,
+                    text = arrow,
                     color = changeColor,
+                    style = MaterialTheme.typography.bodyLarge,
                     maxLines = 1,
                     softWrap = false
                 )
             }
-
-            Spacer(Modifier.width(10.dp))
-
-            Text(
-                text = arrow,
-                color = changeColor,
-                style = MaterialTheme.typography.bodyLarge,
-                maxLines = 1,
-                softWrap = false
-            )
         }
     }
 }
