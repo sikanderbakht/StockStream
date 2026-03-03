@@ -1,4 +1,4 @@
-package com.sikander.stockstream.presentation
+package com.sikander.stockstream.presentation.stocks.details
 
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
@@ -9,10 +9,10 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 
 @Composable
-fun StocksFeedScreen (modifier: Modifier = Modifier) {
+fun StockDetailsScreen (modifier: Modifier = Modifier) {
     Scaffold(modifier = modifier.fillMaxSize()) { padding ->
         Column(modifier = modifier.fillMaxSize().padding(padding)) {
-            Text(text = "Stocks Feed Screen")
+            Text(text = "Stocks Details Screen")
         }
 
     }
